@@ -1,9 +1,12 @@
 # ---- build stage ----
-FROM golang:1.22 AS build
+FROM golang:1.25 AS build
 WORKDIR /src
 
-# Kopiera hela projektet
+# Kopiera hela projektet (enkelt när vi saknar externa deps)
 COPY . .
+
+# Debug-info (hjälper om build skulle fallera)
+RUN go version && go env && ls -la && echo "Packages:" && go list ./...
 
 # Bygg med inbakad versionsinfo
 ARG VERSION=0.1.0

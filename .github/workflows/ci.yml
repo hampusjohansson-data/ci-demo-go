@@ -22,25 +22,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Print env
-        run: |
-          uname -a
-          echo "PWD=$(pwd)"
-          echo "Repo=${{ github.repository }}  Ref=${{ github.ref }}"
-          ls -la
-          echo "---- tree ----"
-          find . -maxdepth 3 -type d -print
-
-      - name: Setup Go
+      - name: Setup Go (matcha lokalt 1.25)
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.25.x'
           cache: true
-
-      - name: Go env
-        run: |
-          go version
-          go env
 
       - name: Go tidy (non-strict)
         run: go mod tidy
@@ -48,17 +34,16 @@ jobs:
       - name: List packages
         run: go list ./...
 
-      - name: Test (verbose + race)
-        run: go test ./... -race -v -coverprofile=coverage.out
+      - name: Test (race + coverage)
+        run: go test ./... -race -coverprofile=coverage.out
 
       - name: Build binary
         run: go build -o bin/app ./cmd/server
 
-    # Viktigt: markera jobbet som "soft-fail" så kedjan kan fortsätta
+    # Låt resten av pipelinen rulla även om detta blir rött
     continue-on-error: true
 
   docker:
-    # Kör ALLTID även om build-test failar, men bara på main/taggar
     needs: build-test
     if: ${{ always() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) }}
     runs-on: ubuntu-latest
@@ -110,12 +95,12 @@ jobs:
       - name: Login & pull image
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
 
       - name: Trivy scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
           format: table
           vuln-type: 'os,library'
           ignore-unfixed: true

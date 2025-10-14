@@ -54,13 +54,14 @@ jobs:
       - name: Build binary
         run: go build -o bin/app ./cmd/server
 
-    # Tillfälligt – låt resten av pipen fortsätta även om build-test blir röd
+    # Viktigt: markera jobbet som "soft-fail" så kedjan kan fortsätta
     continue-on-error: true
 
   docker:
+    # Kör ALLTID även om build-test failar, men bara på main/taggar
     needs: build-test
+    if: ${{ always() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) }}
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,6 +104,7 @@ jobs:
 
   security:
     needs: docker
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Login & pull image

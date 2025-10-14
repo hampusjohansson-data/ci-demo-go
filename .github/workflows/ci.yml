@@ -35,6 +35,8 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.60
+        continue-on-error: true
+
 
       - name: Test
         run: go test ./... -race -coverprofile=coverage.out

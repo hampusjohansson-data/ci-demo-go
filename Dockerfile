@@ -2,13 +2,10 @@
 FROM golang:1.22 AS build
 WORKDIR /src
 
-# Kopiera allt (enklast när projektet saknar externa deps)
+# Kopiera hela projektet
 COPY . .
 
-# Ladda ner moduler (gör inget om du saknar externa deps, men är ofarligt)
-RUN go mod download
-
-# Bygg med version/commit/date inbakade
+# Bygg med inbakad versionsinfo
 ARG VERSION=0.1.0
 ARG COMMIT=dev
 ARG DATE=unknown

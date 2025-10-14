@@ -24,5 +24,8 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 		Commit:  version.Commit,
 		Date:    version.Date,
 	}
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

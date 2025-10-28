@@ -56,13 +56,13 @@ services:
   # Migreringstjänst (idempotent)
   migrate:
     image: migrate/migrate:v4.17.1
-    # Viktigt: dubbla $ för att låta variabeln expanderas INNE i containern.
-    command: ["-path", "/migrations", "-database", "$${DATABASE_URL}?sslmode=disable", "up"]
+    entrypoint: ["/bin/sh", "-c"]
+    command: migrate -path /migrations -database "$DATABASE_URL" up
     volumes:
       - ./db/migrations:/migrations:ro
     environment:
-      # Fallback för CI om DATABASE_URL inte är satt i miljön
-      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/app}
+      # Full URL inkl. sslmode, med fallback för CI
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/app?sslmode=disable}
     depends_on:
       db:
         condition: service_healthy

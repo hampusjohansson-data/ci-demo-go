@@ -1,4 +1,4 @@
-# === [ Befintlig del – OFÖRÄNDRAD ] ==========================================
+# =========[ Go – BEFINTLIG DEL ]================================================
 APP := ci-demo-go
 PKG := github.com/hampusjohansson-data/ci-demo-go
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "dev")
@@ -10,7 +10,6 @@ LDFLAGS := -X $(PKG)/pkg/version.Version=$(VERSION) \
            -X $(PKG)/pkg/version.Date=$(DATE)
 
 .PHONY: tidy test build run lint
-
 tidy:
 	go mod tidy
 
@@ -26,33 +25,30 @@ run:
 lint:
 	golangci-lint run
 
-# === [ Ny del – TILLÄGG ] =====================================================
-# Python / Docker Compose mål är helt separata från Go-målen ovan.
-# De kolliderar inte med dina nuvarande mål-namn.
+# =========[ Python / Compose / Migrations ]===========================
 
 PY ?= python3
 PIP ?= pip3
 
-.PHONY: lint-py test-py build-py up down logs
+.PHONY: lint-py test-py build-py up down logs migrate-up migrate-down migrate-create
 
-# Lint för Python (ruff) – kör kodstil/kvalitet på pyservice/
+# ---- Python ----
 lint-py:
 	@$(PY) -m pip install --upgrade pip ruff pytest >/dev/null
 	@ruff check pyservice
-	@ruff format --check pyservice || true   # rapportera endast
-	@ruff format pyservice                   # formatera
-	@ruff check --fix pyservice              # auto-fixa där det går
+	@ruff format --check pyservice || true
+	@ruff format pyservice
+	@ruff check --fix pyservice
 
-# Tester för Python (pytest)
 test-py:
-	@$(PY) -m pip install -r pyservice/requirements.txt pytest >/dev/null
+	@$(PY) -m pip install --upgrade pip >/dev/null
+	@$(PY) -m pip install -r pyservice/requirements.txt >/dev/null
 	@PYTHONPATH=pyservice pytest -q
 
-# Bygg Docker-image för Python-tjänsten
 build-py:
 	@docker build -t ci-demo-py:local pyservice
 
-# Orkestrera Go + Python + Postgres via docker compose
+# ---- Docker Compose (lokalt) ----
 up:
 	@docker compose up --build -d
 
@@ -61,3 +57,27 @@ down:
 
 logs:
 	@docker compose logs -f
+
+# ---- Migreringar (kräver att compose-nätet finns – kör 'make up' först eller låt kommandot funka fristående) ----
+# Använder samma DATABASE_URL som Compose; om den saknas används default-URL.
+migrate-up:
+	@docker run --rm \
+		--network ci-demo-go_default \
+		-v "$(PWD)/db/migrations:/migrations" \
+		-e DATABASE_URL="$${DATABASE_URL:-postgres://postgres:postgres@db:5432/app}" \
+		migrate/migrate:v4.17.1 -path=/migrations -database "$${DATABASE_URL}?sslmode=disable" up
+
+migrate-down:
+	@docker run --rm \
+		--network ci-demo-go_default \
+		-v "$(PWD)/db/migrations:/migrations" \
+		-e DATABASE_URL="$${DATABASE_URL:-postgres://postgres:postgres@db:5432/app}" \
+		migrate/migrate:v4.17.1 -path=/migrations -database "$${DATABASE_URL}?sslmode=disable" down 1
+
+# Skapa nya tomma migrationsfiler: make migrate-create name=add_table
+migrate-create:
+	@test -n "$(name)" || (echo "Usage: make migrate-create name=add_table"; exit 1)
+	@ts=$$(date +%Y%m%d%H%M%S); \
+	mkdir -p db/migrations; \
+	touch db/migrations/$${ts}_$(name).up.sql db/migrations/$${ts}_$(name).down.sql; \
+	echo "Created db/migrations/$${ts}_$(name).up.sql (and .down.sql)"

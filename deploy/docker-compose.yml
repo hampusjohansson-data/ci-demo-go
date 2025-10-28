@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: app
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api-go:
+    image: ghcr.io/${OWNER}/${REPO}/go:latest
+    env_file: .env
+    environment:
+      PORT: "8080"
+      APP_ENV: "prod"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt:
+      - no-new-privileges:true
+
+  api-py:
+    image: ghcr.io/${OWNER}/${REPO}/py:latest
+    env_file: .env
+    environment:
+      PORT: "8000"
+      APP_ENV: "prod"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt:
+      - no-new-privileges:true
+
+  migrate:
+    image: migrate/migrate:v4.17.1
+    command: ["-path", "/migrations", "-database", "${DATABASE_URL}?sslmode=disable", "up"]
+    volumes:
+      - ../db/migrations:/migrations:ro
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "on-failure"
+
+volumes:
+  db_data:

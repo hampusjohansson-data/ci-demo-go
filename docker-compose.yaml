@@ -1,5 +1,4 @@
 services:
-  # Postgres – databas
   db:
     image: postgres:16-alpine
     environment:
@@ -16,22 +15,23 @@ services:
     ports:
       - "5432:5432"
 
-  # Go-API – din befintliga app
   api-go:
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       PORT: "8080"
-      # Sätt denna via .env om du vill koppla DB i appen:
       # DATABASE_URL: postgres://postgres:postgres@db:5432/app?sslmode=disable
     ports:
       - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt:
+      - no-new-privileges:true
 
-  # Python-API – FastAPI
   api-py:
     build:
       context: ./pyservice
@@ -45,18 +45,22 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt:
+      - no-new-privileges:true
 
-  # Migrations – kör SQL-migreringar idempotent
   migrate:
     image: migrate/migrate:v4.17.1
-    # OBS: använder DATABASE_URL från environment/.env om du sätter den
     command: ["-path", "/migrations", "-database", "${DATABASE_URL}?sslmode=disable", "up"]
     volumes:
       - ./db/migrations:/migrations:ro
+    environment:
+      # Fallback så CI inte får "error: no scheme"
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/app}
     depends_on:
       db:
         condition: service_healthy
-    # Kör bara när vi ber om det (via compose run) eller vid up; startar, kör, exitar
     restart: "on-failure"
 
 volumes:

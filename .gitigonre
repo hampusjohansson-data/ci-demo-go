@@ -1,13 +1,43 @@
-# Go build artifacts
+# --- Go build artifacts ---
 bin/
+dist/
+out/
+*.test
 coverage.out
 
-# Logs
+# --- Python: venv, caches, test-artefakter ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+pip-wheel-metadata/
+pip-log.txt
+
+# --- Local env & tooling (behåll .env.example i repo) ---
+.env
+.env.*
+!.env.example
+.direnv/
+.envrc
+
+# --- Docker/Compose (lokala overrides) ---
+docker-compose.override.yml
+
+# --- Logs ---
 *.log
 
-# macOS system files
+# --- macOS metadata ---
 .DS_Store
+**/.DS_Store
 
-# Editor / IDE artifacts
+# --- Editor / IDE ---
 .vscode/
 .idea/

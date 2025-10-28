@@ -1,0 +1,10 @@
+# --- Framework ---
+fastapi==0.115.2
+uvicorn==0.30.6
+
+# --- Database driver (Postgres) ---
+psycopg[binary]==3.2.12
+
+# --- Test dependencies ---
+httpx==0.28.1
+pytest==8.3.3

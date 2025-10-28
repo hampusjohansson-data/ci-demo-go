@@ -1,0 +1,8 @@
+mode: atomic
+github.com/hampusjohansson-data/ci-demo-go/internal/http/handlers.go:18.60,27.56 3 1
+github.com/hampusjohansson-data/ci-demo-go/internal/http/handlers.go:27.56,30.3 2 0
+github.com/hampusjohansson-data/ci-demo-go/cmd/server/main.go:11.13,18.55 5 0
+github.com/hampusjohansson-data/ci-demo-go/cmd/server/main.go:18.55,20.3 1 0
+github.com/hampusjohansson-data/ci-demo-go/cmd/server/main.go:23.34,24.34 1 0
+github.com/hampusjohansson-data/ci-demo-go/cmd/server/main.go:24.34,26.3 1 0
+github.com/hampusjohansson-data/ci-demo-go/cmd/server/main.go:27.2,27.12 1 0

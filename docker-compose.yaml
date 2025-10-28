@@ -56,8 +56,10 @@ services:
   # Migreringstjänst (idempotent)
   migrate:
     image: migrate/migrate:v4.17.1
+    # Kör via shell så $DATABASE_URL expanderas i containern
     entrypoint: ["/bin/sh", "-c"]
-    command: migrate -path /migrations -database "$DATABASE_URL" up
+    # Viktigt: använd -source file:///migrations (inte -path)
+    command: migrate -source file:///migrations -database "$DATABASE_URL" up
     volumes:
       - ./db/migrations:/migrations:ro
     environment:

@@ -17,11 +17,12 @@ jobs:
       fail-fast: false
       matrix:
         lang: [go, python]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # --- Go ---
+      # ---------- Go ----------
       - name: Set up Go
         if: matrix.lang == 'go'
         uses: actions/setup-go@v5
@@ -52,7 +53,7 @@ jobs:
         run: |
           go test ./... -covermode=atomic -coverprofile=coverage.out
 
-      # --- Python ---
+      # ---------- Python ----------
       - name: Set up Python
         if: matrix.lang == 'python'
         uses: actions/setup-python@v5
@@ -102,8 +103,15 @@ jobs:
       - name: Start stack
         run: docker compose up --build -d
 
+      # Kör migreringarna uttryckligen med env och default entrypoint.
+      # Detta undviker problem med variabelexpansion i compose.
       - name: Run DB migrations
-        run: docker compose run --rm migrate
+        run: |
+          docker compose run --rm \
+            -e DATABASE_URL="postgres://postgres:postgres@db:5432/app?sslmode=disable" \
+            --entrypoint "" \
+            migrate \
+            migrate -source file:///migrations -database "$DATABASE_URL" up
 
       - name: Probe Go health
         run: |

@@ -119,7 +119,7 @@ Projektet innehåller flera lager av säkerhet:
 * Kräver kodgranskning innan sammanslagning.
 
 5.2 Hantering av hemligheter
-* *ösenord och API-nycklar lagras aldrig i koden.
+* Lösenord och API-nycklar lagras aldrig i koden.
 
 * Istället används miljövariabler (.env) som inte checkas in i Git.
 
